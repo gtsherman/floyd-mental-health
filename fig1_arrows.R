@@ -15,7 +15,7 @@ source('setup_significance_testing.R')
 indiv = indiv %>%
   filter(floyd_weekOrNot == 1 | (floyd_weekOrNot == 0 & 
                                    ((endDate_week_delta < 0 & endDate_week_delta > -5)))) %>%
-  select(-endDate_week_delta)
+  select(-endDate_week_delta, -FIPS)
 
 # Calculate proportion (mean) and standard error of each emotion (anger and sadness) for each demographic
 # category separately. Note that weights are not used, per Gallup's recommendations.
@@ -189,7 +189,7 @@ anger_sad_summary %>%
   labs(x = '',
        y = 'Percent angry',
        color = '', fill = '') +
-  ggsave('anger_arrows_main.png', width=12, height=8, units='in', dpi=300)o
+  ggsave('anger_arrows_main.png', width=12, height=8, units='in', dpi=300)
 
 # Create arrow plot for change in sadness. Follows the same steps as above.
 anger_sad_summary %>%

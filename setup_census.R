@@ -1,5 +1,6 @@
 # Load libraries
 library(tidyverse)
+library(psych)
 
 
 # Load Floyd week data
@@ -7,7 +8,8 @@ con = DBI::dbConnect(RMariaDB::MariaDB(), dbname = 'household_pulse',
                      host = '127.0.0.1', user = '', password = '')
 pulse_floyd = tbl(con, 'pulse2020_puf_05') %>%
     select(SCRAM, gad2_sum, phq2_sum, is_black, is_white,
-           is_hispanic, is_asian, WEEK, state, PWEIGHT) %>%
+           is_hispanic, is_asian, WEEK, state, PWEIGHT,
+           INCOME, is_female, age_in_years, EEDUC) %>%
     as_tibble()
 
 # Load pre-Floyd data
@@ -15,7 +17,8 @@ pulse_base = tibble()
 for (i in seq(4)) {
   df = tbl(con, paste0('pulse2020_puf_0', i)) %>%
     select(SCRAM, gad2_sum, phq2_sum, is_black, is_white,
-           is_hispanic, is_asian, WEEK, state, PWEIGHT) %>%
+           is_hispanic, is_asian, WEEK, state, PWEIGHT,
+           INCOME, is_female, age_in_years, EEDUC) %>%
     as_tibble()
   pulse_base = rbind(pulse_base, df)
 }

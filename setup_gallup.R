@@ -2,7 +2,7 @@
 library(tidyverse)
 library(lubridate)
 library(ggsci)
-library(us_map)
+library(usmap)
 
 
 # Load data
@@ -35,3 +35,5 @@ indiv = indiv %>% full_join(individual_anger %>%
                                                                   ifelse(DEMO_EDUCATION_2017 < 4, '< College', 
                                                                          ifelse(DEMO_EDUCATION_2017 == 4 | DEMO_EDUCATION_2017 == 5, 'College', 
                                                                                 ifelse(DEMO_EDUCATION_2017 == 6, '> College', DEMO_EDUCATION_2017))))))
+indiv = indiv %>%
+  mutate(DEMO_AGE_BINS2 = if_else(DEMO_AGE_BINS2 == '45+', '46+', DEMO_AGE_BINS2))

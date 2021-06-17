@@ -11,20 +11,19 @@ source('setup_significance_testing.R')
 
 # Setup -----
 
-# Limit to Floyd week or the preceding 4 weeks
-indiv = indiv %>%
-  filter(floyd_weekOrNot == 1 | (floyd_weekOrNot == 0 & 
-                                   ((endDate_week_delta < 0 & endDate_week_delta > -5)))) %>%
-  select(-endDate_week_delta)
+# Identify states using FIPS code. This is very slow.
+indiv_state = indiv %>%
+    mutate(FIPS = if_else(FIPS == '46113', '46102', FIPS)) %>%  # this FIPS was changed: https://github.com/pdil/usmap/issues/6)
+    filter(!is.na(FIPS), FIPS != '') %>%
+    select(WEC_sadF, WEE_angerF, floyd_weekOrNot, FIPS, DEMO_RACE_NAME, endDate_week_delta) %>%
+    rowwise() %>%
+    mutate(state = fips_info(FIPS)$abbr) %>%
+    ungroup()
 
-# Convert county level FIPS to state. This is fairly slow
-anger_sad_state = indiv %>%
-  select(-EMPLOYEE_KEY_VALUE, -endDate_asDate) %>%
-  mutate(FIPS = if_else(FIPS == '46113', '46102', FIPS)) %>%  # this FIPS was changed: https://github.com/pdil/usmap/issues/6)
-  filter(!is.na(FIPS), FIPS != '') %>%
-  rowwise() %>%
-  mutate(state = fips_info(FIPS)$abbr) %>%
-  ungroup()
+# Limit to Floyd week or the preceding 4 weeks
+anger_sad_state = indiv_state %>%
+  filter(floyd_weekOrNot == 1 | (floyd_weekOrNot == 0 & 
+                                   ((endDate_week_delta < 0 & endDate_week_delta > -5))))
 
 
 # Calculate proportions and standard errors -----
@@ -187,7 +186,7 @@ descs_mnVsUs = indiv_long_mnVsUs %>%
 
 # Same as above, but here descriptor will be "is_Minneapolis" with values
 # "Minneapolis", "Not Minneapolis" (i.e., the rest of MN), and "Other state".
-indiv_long_mn = indiv_state %>%
+indiv_long_mn = anger_sad_state %>%
   mutate(is_Minneapolis = if_else(FIPS == '27053', 'Minneapolis', 
                                   if_else(state == 'MN', 'Not Minneapolis', 'Other state'))) %>%
   select(-endDate_week_delta, -FIPS, -DEMO_RACE_NAME, -state) %>%

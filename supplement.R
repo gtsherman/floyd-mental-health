@@ -17,12 +17,12 @@ indiv %>%
   group_by(endDate_asDate) %>%
   summarize(across(.cols = c('WEE_angerF', 'WEC_sadF'),
                    .fns = list(p = ~mean(., na.rm = T),
-                               se = ~sqrt(mean(., na.rm = T) * (0 - mean(., na.rm = T)) / n())))) %>%
+                               se = ~sqrt(mean(., na.rm = T) * (1 - mean(., na.rm = T)) / n())))) %>%
   ggplot(aes(endDate_asDate, WEE_angerF_p)) +
   geom_point() +
-  geom_smooth(span = .0, se = F, color = orange) +
+  geom_smooth(span = .1, se = F, color = orange) +
   geom_errorbar(aes(ymin = WEE_angerF_p - WEE_angerF_se, ymax = WEE_angerF_p + WEE_angerF_se)) +
-  scale_y_continuous(labels = scales::label_percent(accuracy = 0L),
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1L),
                      breaks = seq(-1, 1, by = .05)) +
   theme_Publication() +
   theme(legend.position = 'none') +
@@ -36,12 +36,12 @@ indiv %>%
   group_by(endDate_asDate) %>%
   summarize(across(.cols = c('WEE_angerF', 'WEC_sadF'),
                    .fns = list(p = ~mean(., na.rm = T),
-                               se = ~sqrt(mean(., na.rm = T) * (0 - mean(., na.rm = T)) / n())))) %>%
+                               se = ~sqrt(mean(., na.rm = T) * (1 - mean(., na.rm = T)) / n())))) %>%
   ggplot(aes(endDate_asDate, WEC_sadF_p)) +
   geom_point() +
-  geom_smooth(span = .0, se = F, color = blue) +
+  geom_smooth(span = .1, se = F, color = blue) +
   geom_errorbar(aes(ymin = WEC_sadF_p - WEC_sadF_se, ymax = WEC_sadF_p + WEC_sadF_se)) +
-  scale_y_continuous(labels = scales::label_percent(accuracy = 0L),
+  scale_y_continuous(labels = scales::label_percent(accuracy = 1L),
                      breaks = seq(-1, 1, by = .05)) +
   theme_Publication() +
   theme(legend.position = 'none') +
@@ -142,7 +142,7 @@ indiv = indiv %>%
 # Calculate proportion (mean) and standard error of each emotion (anger and sadness) for each demographic
 # category separately. Note that weights are not used, per Gallup's recommendations.
 anger_sad_summary = indiv %>%
-  select(-EMPLOYEE_KEY_VALUE, -endDate_asDate) %>%
+  select(-EMPLOYEE_KEY_VALUE, -endDate_asDate, -FIPS) %>%
   gather('descriptor', 'value', -WEE_angerF, -WEC_sadF, -floyd_weekOrNot) %>%
   group_by(descriptor, value, floyd_weekOrNot) %>%
   summarize_at(vars(WEE_angerF, WEC_sadF), 
@@ -178,7 +178,7 @@ anger_sad_summary = anger_sad_summary %>%
 # Descriptor contains the overarching category containing mutually exclusive subcategories,
 # e.g., race, gender, income level, etc.
 indiv_long = indiv %>%
-  select(-EMPLOYEE_KEY_VALUE, -endDate_asDate, -WEIGHT) %>%
+  select(-EMPLOYEE_KEY_VALUE, -endDate_asDate, -WEIGHT, -FIPS) %>%
   gather('descriptor', 'value', -WEE_angerF, -WEC_sadF, -floyd_weekOrNot)
 descs = indiv_long %>%
   select(descriptor) %>%
@@ -270,7 +270,7 @@ anger_sad_summary %>%
                                           'Democrat', 'Republican',
                                           '18-30', '31-45', '46+',
                                           'Female', 'Male',
-                                          'Less Than College', 'College', 'More Than College',
+                                          '< College', 'College', '> College',
                                           '$0-$59,999', '$60,000-$119,999', '$120,000+')),
          descriptor = case_when(
            descriptor == 'Overall' ~ 'Overall',
@@ -340,7 +340,7 @@ anger_sad_summary %>%
                                           'Democrat', 'Republican',
                                           '18-30', '31-45', '46+',
                                           'Female', 'Male',
-                                          'Less Than College', 'College', 'More Than College',
+                                          '< College', 'College', '> College',
                                           '$0-$59,999', '$60,000-$119,999', '$120,000+')),
          descriptor = case_when(
            descriptor == 'Overall' ~ 'Overall',
@@ -371,7 +371,7 @@ anger_sad_summary %>%
                 c('White', 'Asian'),
                 c('White', 'Hispanic'),
                 c('46+', '31-45'),
-                c('More Than College', 'College')
+                c('> College', 'College')
               ), 
               annotation = c('0.011', '0.021', '0.077', '0.082', '0.076'),
               textsize = 8) +
@@ -554,9 +554,9 @@ angry_sad_mn_city = angry_mn_city %>%
 
 # Descriptor contains the overarching category containing mutually exclusive subcategories,
 # in this case only the "is_MN" descriptor exists with values "Minnesota" and "Other states".
-indiv_long_mnVsUs = indiv_state %>%
+indiv_long_mnVsUs = anger_sad_state %>%
   mutate(is_MN = if_else(state == 'MN', 'Minnesota', 'Other states')) %>%
-  select(-endDate_week_delta, -FIPS, -DEMO_RACE_NAME, -state) %>%
+  select(-FIPS, -state, -WEIGHT) %>%
   gather('descriptor', 'value', -WEE_angerF, -WEC_sadF, -floyd_weekOrNot)
 descs_mnVsUs = indiv_long_mnVsUs %>%
   select(descriptor) %>%
@@ -566,10 +566,10 @@ descs_mnVsUs = indiv_long_mnVsUs %>%
 
 # Same as above, but here descriptor will be "is_Minneapolis" with values
 # "Minneapolis", "Not Minneapolis" (i.e., the rest of MN), and "Other state".
-indiv_long_mn = indiv_state %>%
+indiv_long_mn = anger_sad_state %>%
   mutate(is_Minneapolis = if_else(FIPS == '27053', 'Minneapolis', 
                                   if_else(state == 'MN', 'Not Minneapolis', 'Other state'))) %>%
-  select(-endDate_week_delta, -FIPS, -DEMO_RACE_NAME, -state) %>%
+  select(-FIPS, -state, -WEIGHT) %>%
   gather('descriptor', 'value', -WEE_angerF, -WEC_sadF, -floyd_weekOrNot)
 descs_mn = indiv_long_mn %>%
   select(descriptor) %>%
@@ -1146,6 +1146,112 @@ anger_sad_geo_ns = bind_rows(anger_sad_state_ns, anger_sad_state_city_ns, anger_
   mutate(descriptor = if_else(str_detect(descriptor, 'anger'), 'Anger', 'Sadness')) %>%
   spread(floyd_weekOrNot, v) %>%
   rename(`not_floyd_n` = `0`, `floyd_n` = `1`, `value` = is_MN)
+
+# Calculate z-statistics and p-values...
+# ...for Minneapolis and other states
+anger_sad_state_city_zs = anger_sad_state %>%
+  mutate(is_MN = if_else(state == 'MN', 'MN', 'Other'),
+         is_Minneapolis = if_else(FIPS == '27053', 'Minneapolis', if_else(state == 'MN', 'Not Minneapolis', 'Other state'))) %>%
+  select(floyd_weekOrNot, WEC_sadF, WEE_angerF, is_MN, is_Minneapolis) %>%
+  mutate(descriptor = 'is_Minneapolis', value = is_Minneapolis) %>% 
+  filter(is_Minneapolis != 'Not Minneapolis') %>%
+  group_by(floyd_weekOrNot, descriptor, value) %>%
+  mutate(WEE_angerF_n = sum(!is.na(WEE_angerF)),
+         WEC_sadF_n = sum(!is.na(WEC_sadF))) %>%
+  group_by(descriptor, value) %>%
+  summarize(WEE_angerF_z = sqrt(prop.test(table(WEE_angerF, floyd_weekOrNot))$statistic),
+            WEE_angerF_p = prop.test(table(WEE_angerF, floyd_weekOrNot))$p.value,
+            WEC_sadF_z = sqrt(prop.test(table(WEC_sadF, floyd_weekOrNot))$statistic),
+            WEC_sadF_p = prop.test(table(WEC_sadF, floyd_weekOrNot))$p.value) %>%
+  ungroup() %>%
+  select(-descriptor) %>%
+  gather('k', 'v', -value) %>%
+  mutate(descriptor = case_when(
+    k == 'WEE_angerF_z' ~ 'Anger',
+    k == 'WEE_angerF_p' ~ 'Anger',
+    k == 'WEE_angerF_n' ~ 'Anger',
+    k == 'WEC_sadF_z' ~ 'Sadness',
+    k == 'WEC_sadF_p' ~ 'Sadness',
+    k == 'WEC_sadF_n' ~ 'Sadness'
+  ), n = case_when(
+    k == 'WEE_angerF_z' ~ 'z',
+    k == 'WEE_angerF_p' ~ 'p',
+    k == 'WEE_angerF_n' ~ 'n',
+    k == 'WEC_sadF_z' ~ 'z',
+    k == 'WEC_sadF_p' ~ 'p',
+    k == 'WEC_sadF_n' ~ 'n'
+  )) %>%
+  select(-k) %>%
+  spread(n, v)
+# ...for Minnesota
+anger_sad_state_city_zs = anger_sad_state %>%
+  mutate(is_MN = if_else(state == 'MN', 'MN', 'Other'),
+         is_Minneapolis = if_else(FIPS == '27053', 'Minneapolis', if_else(state == 'MN', 'Not Minneapolis', 'Other state'))) %>%
+  select(floyd_weekOrNot, WEC_sadF, WEE_angerF, is_MN, is_Minneapolis) %>%
+  mutate(descriptor = 'is_Minneapolis', value = is_MN) %>% 
+  filter(is_MN == 'MN') %>%
+  group_by(floyd_weekOrNot, descriptor, value) %>%
+  mutate(WEE_angerF_n = sum(!is.na(WEE_angerF)),
+         WEC_sadF_n = sum(!is.na(WEC_sadF))) %>%
+  group_by(descriptor, value) %>%
+  summarize(WEE_angerF_z = sqrt(prop.test(table(WEE_angerF, floyd_weekOrNot))$statistic),
+            WEE_angerF_p = prop.test(table(WEE_angerF, floyd_weekOrNot))$p.value,
+            WEC_sadF_z = sqrt(prop.test(table(WEC_sadF, floyd_weekOrNot))$statistic),
+            WEC_sadF_p = prop.test(table(WEC_sadF, floyd_weekOrNot))$p.value) %>%
+  ungroup() %>%
+  select(-descriptor) %>%
+  gather('k', 'v', -value) %>%
+  mutate(descriptor = case_when(
+    k == 'WEE_angerF_z' ~ 'Anger',
+    k == 'WEE_angerF_p' ~ 'Anger',
+    k == 'WEE_angerF_n' ~ 'Anger',
+    k == 'WEC_sadF_z' ~ 'Sadness',
+    k == 'WEC_sadF_p' ~ 'Sadness',
+    k == 'WEC_sadF_n' ~ 'Sadness'
+  ), n = case_when(
+    k == 'WEE_angerF_z' ~ 'z',
+    k == 'WEE_angerF_p' ~ 'p',
+    k == 'WEE_angerF_n' ~ 'n',
+    k == 'WEC_sadF_z' ~ 'z',
+    k == 'WEC_sadF_p' ~ 'p',
+    k == 'WEC_sadF_n' ~ 'n'
+  )) %>%
+  select(-k) %>%
+  spread(n, v) %>%
+  bind_rows(anger_sad_state_city_zs)
+# ...overall
+anger_sad_state_city_zs = anger_sad_state %>%
+  select(floyd_weekOrNot, WEC_sadF, WEE_angerF) %>%
+  mutate(descriptor = 'is_Minneapolis', value = 'Overall') %>% 
+  group_by(floyd_weekOrNot, descriptor, value) %>%
+  mutate(WEE_angerF_n = sum(!is.na(WEE_angerF)),
+         WEC_sadF_n = sum(!is.na(WEC_sadF))) %>%
+  group_by(descriptor, value) %>%
+  summarize(WEE_angerF_z = sqrt(prop.test(table(WEE_angerF, floyd_weekOrNot))$statistic),
+            WEE_angerF_p = prop.test(table(WEE_angerF, floyd_weekOrNot))$p.value,
+            WEC_sadF_z = sqrt(prop.test(table(WEC_sadF, floyd_weekOrNot))$statistic),
+            WEC_sadF_p = prop.test(table(WEC_sadF, floyd_weekOrNot))$p.value) %>%
+  ungroup() %>%
+  select(-descriptor) %>%
+  gather('k', 'v', -value) %>%
+  mutate(descriptor = case_when(
+    k == 'WEE_angerF_z' ~ 'Anger',
+    k == 'WEE_angerF_p' ~ 'Anger',
+    k == 'WEE_angerF_n' ~ 'Anger',
+    k == 'WEC_sadF_z' ~ 'Sadness',
+    k == 'WEC_sadF_p' ~ 'Sadness',
+    k == 'WEC_sadF_n' ~ 'Sadness'
+  ), n = case_when(
+    k == 'WEE_angerF_z' ~ 'z',
+    k == 'WEE_angerF_p' ~ 'p',
+    k == 'WEE_angerF_n' ~ 'n',
+    k == 'WEC_sadF_z' ~ 'z',
+    k == 'WEC_sadF_p' ~ 'p',
+    k == 'WEC_sadF_n' ~ 'n'
+  )) %>%
+  select(-k) %>%
+  spread(n, v) %>%
+  bind_rows(anger_sad_state_city_zs)
 
 # Calculate overall proportion and standard error before and after Floyd's murder...
 # ...for sadness

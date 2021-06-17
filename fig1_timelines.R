@@ -15,7 +15,7 @@ daily_weighted = indiv %>%
   filter(endDate_asDate <= '2020-04-26') %>%  # when data was aggregated daily
   group_by(endDate_asDate) %>%
   summarize(p_angry = weighted.mean(WEE_angerF, WEIGHT, na.rm = T),
-            se_angry = weighted_se(WEE_angerF, WEIGHT, na.rm = T) %>%
+            se_angry = weighted_se(WEE_angerF, WEIGHT, na.rm = T)) %>%
   ungroup() %>%
   mutate(wk = floor_date(endDate_asDate, 'week', week_start = 1)) %>%
   group_by(wk) %>%
@@ -83,7 +83,7 @@ daily_weighted = indiv %>%
   filter(endDate_asDate <= '2020-04-26') %>%  # when data was aggregated daily
   group_by(endDate_asDate) %>%
   summarize(p_sad = weighted.mean(WEC_sadF, WEIGHT, na.rm = T),
-            se_sad = weighted_se(WEC_sadF, WEIGHT, na.rm = T) %>%
+            se_sad = weighted_se(WEC_sadF, WEIGHT, na.rm = T)) %>%
   ungroup() %>%
   mutate(wk = floor_date(endDate_asDate, 'week', week_start = 1)) %>%
   group_by(wk) %>%
